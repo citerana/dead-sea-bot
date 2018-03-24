@@ -1,5 +1,7 @@
 package me.citerana.deadsea.bot;
 
+import me.citerana.deadsea.bot.games.RockPaperScissors;
+import me.citerana.deadsea.bot.games.TicTacToe;
 import me.citerana.deadsea.tools.Configuration;
 import net.dv8tion.jda.core.AccountType;
 import net.dv8tion.jda.core.JDA;
@@ -13,6 +15,8 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 
 public class MessageListener extends ListenerAdapter {
+
+    String botPrefix = "d!";
 
     public static void main(String[] args) {
         Configuration config = new Configuration();
@@ -37,43 +41,51 @@ public class MessageListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         JDA jda = event.getJDA();
-        long responseNumber = event.getResponseNumber();
 
         User author = event.getAuthor();
         Message message = event.getMessage();
-        MessageChannel channel = event.getChannel();
-
         String msg = message.getContentDisplay();
 
-        boolean isBot = author.isBot();
+        if (msg.startsWith(botPrefix)) {
+            OffsetDateTime receivedTime = OffsetDateTime.now();
+            msg = msg.substring(botPrefix.length());
 
-        if (event.isFromType(ChannelType.TEXT)) {
-            Guild guild = event.getGuild();
-            TextChannel textChannel = event.getTextChannel();
-            Member member = event.getMember();
+            MessageChannel channel = event.getChannel();
 
-            String name;
-            if (message.isWebhookMessage()) {
-                name = author.getName();
-            } else {
-                name = member.getEffectiveName();
+            boolean isBot = author.isBot();
+
+            if (event.isFromType(ChannelType.TEXT)) {
+                Guild guild = event.getGuild();
+                TextChannel textChannel = event.getTextChannel();
+                Member member = event.getMember();
+
+                String name;
+                if (message.isWebhookMessage()) {
+                    name = author.getName();
+                } else {
+                    name = member.getEffectiveName();
+                }
+
+                System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(), textChannel.getName(), name, msg);
+            } else if (event.isFromType(ChannelType.PRIVATE)) {
+                PrivateChannel privateChannel = event.getPrivateChannel();
             }
 
-            System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(), textChannel.getName(), name, msg);
-        } else if (event.isFromType(ChannelType.PRIVATE)) {
-            PrivateChannel privateChannel = event.getPrivateChannel();
-        }
+            if (msg.equals("ping")) {
+                OffsetDateTime creationTime = message.getCreationTime();
+                Duration d = Duration.between(creationTime, receivedTime);
 
-        if (msg.equals("!ping")) {
-            OffsetDateTime creationTime = message.getCreationTime();
-            OffsetDateTime receivedTime = OffsetDateTime.now();
-            Duration d = Duration.between(creationTime, receivedTime);
+                long timeElapsed = d.toMillis();
 
-            long timeElapsed = d.toMillis()/100;
-
-            channel.sendMessage("Pong! (" + timeElapsed + "ms)").queue();
-        } else if (msg.equals("!hi")) {
-            channel.sendMessage("Hewwo World!").queue();
+                channel.sendMessage("Pong! (" + timeElapsed + "ms)").queue();
+            } else if (msg.equals("hi")) {
+                channel.sendMessage("Hewwo World!").queue();
+            } else if (msg.equals("ttt")) {
+                TicTacToe ttt = new TicTacToe();
+                ttt.play();
+            } else if (msg.equals("rps")) {
+                RockPaperScissors rps = new RockPaperScissors(3);
+            }
         }
     }
 }

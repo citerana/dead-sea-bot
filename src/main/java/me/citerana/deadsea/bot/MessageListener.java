@@ -14,6 +14,7 @@ import net.dv8tion.jda.core.hooks.ListenerAdapter;
 import javax.security.auth.login.LoginException;
 import java.time.Duration;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public class MessageListener extends ListenerAdapter {
 
@@ -51,6 +52,14 @@ public class MessageListener extends ListenerAdapter {
             OffsetDateTime receivedTime = OffsetDateTime.now();
             msg = msg.substring(botPrefix.length());
 
+            String command = msg;
+            int i = msg.indexOf(' ');
+            if (i >= 0) {
+                command = msg.substring(0,i);
+            }
+
+            System.out.println(command);
+
             MessageChannel channel = event.getChannel();
 
             boolean isBot = author.isBot();
@@ -68,21 +77,27 @@ public class MessageListener extends ListenerAdapter {
                 }
 
                 // Content handling
-                if (msg.equals("ping")) {
+                if (command.equals("ping")) {
                     OffsetDateTime creationTime = message.getCreationTime();
                     Duration d = Duration.between(creationTime, receivedTime);
 
                     long timeElapsed = d.toMillis();
 
                     channel.sendMessage("Pong! (" + timeElapsed + "ms)").queue();
-                } else if (msg.equals("hi")) {
+                } else if (command.equals("hi")) {
                     channel.sendMessage("Hewwo World!").queue();
-                } else if (msg.equals("ttt")) {
+                } else if (command.equals("ttt")) {
                     User p1 = author;
-                    User p2 = message.getMentionedUsers().get(0);
-                    TicTacToe ttt = new TicTacToe(p1, p2, channel);
-                    ttt.sendRules();
-                } else if (msg.equals("rps")) {
+                    List<User> users = message.getMentionedUsers();
+                    System.out.println(users.size());
+                    if (users.isEmpty()) {
+                        channel.sendMessage("`!ttt @name` to play with someone!").queue();
+                    } else {
+                        TicTacToe ttt = new TicTacToe(p1, users.get(0), channel);
+                        ttt.sendRules();
+                        channel.sendMessage("Play in messages. Board display active.");
+                    }
+                } else if (command.equals("rps")) {
                     RockPaperScissors rps = new RockPaperScissors(3);
                 }
 

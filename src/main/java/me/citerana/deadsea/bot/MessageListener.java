@@ -8,6 +8,7 @@ import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
 import net.dv8tion.jda.core.entities.*;
 import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 import javax.security.auth.login.LoginException;
@@ -39,8 +40,8 @@ public class MessageListener extends ListenerAdapter {
      * Overrides hook method in ListenerAdapter class.
      */
     @Override
-    public void onMessageReceived(MessageReceivedEvent event) {
-        JDA jda = event.getJDA();
+    public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
+    JDA jda = event.getJDA();
 
         User author = event.getAuthor();
         Message message = event.getMessage();
@@ -55,8 +56,8 @@ public class MessageListener extends ListenerAdapter {
             boolean isBot = author.isBot();
 
             if (event.isFromType(ChannelType.TEXT)) {
+                // Wrapping around Text channel attributes
                 Guild guild = event.getGuild();
-                TextChannel textChannel = event.getTextChannel();
                 Member member = event.getMember();
 
                 String name;
@@ -66,25 +67,26 @@ public class MessageListener extends ListenerAdapter {
                     name = member.getEffectiveName();
                 }
 
-                System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(), textChannel.getName(), name, msg);
-            } else if (event.isFromType(ChannelType.PRIVATE)) {
-                PrivateChannel privateChannel = event.getPrivateChannel();
-            }
+                // Content handling
+                if (msg.equals("ping")) {
+                    OffsetDateTime creationTime = message.getCreationTime();
+                    Duration d = Duration.between(creationTime, receivedTime);
 
-            if (msg.equals("ping")) {
-                OffsetDateTime creationTime = message.getCreationTime();
-                Duration d = Duration.between(creationTime, receivedTime);
+                    long timeElapsed = d.toMillis();
 
-                long timeElapsed = d.toMillis();
+                    channel.sendMessage("Pong! (" + timeElapsed + "ms)").queue();
+                } else if (msg.equals("hi")) {
+                    channel.sendMessage("Hewwo World!").queue();
+                } else if (msg.equals("ttt")) {
+                    User p1 = author;
+                    User p2 = message.getMentionedUsers().get(0);
+                    TicTacToe ttt = new TicTacToe(p1, p2, channel);
+                    ttt.sendRules();
+                } else if (msg.equals("rps")) {
+                    RockPaperScissors rps = new RockPaperScissors(3);
+                }
 
-                channel.sendMessage("Pong! (" + timeElapsed + "ms)").queue();
-            } else if (msg.equals("hi")) {
-                channel.sendMessage("Hewwo World!").queue();
-            } else if (msg.equals("ttt")) {
-                TicTacToe ttt = new TicTacToe();
-                ttt.play();
-            } else if (msg.equals("rps")) {
-                RockPaperScissors rps = new RockPaperScissors(3);
+                System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(), channel.getName(), name, msg);
             }
         }
     }
